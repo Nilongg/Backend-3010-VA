@@ -1,5 +1,5 @@
 -- Deletes the database if it already exists
---DROP DATABASE music;
+DROP DATABASE music;
 
 -- Creates a new database
 CREATE DATABASE music;
