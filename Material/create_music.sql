@@ -1,8 +1,8 @@
 -- Deletes the database if it already exists
--- DROP DATABASE music;
+--DROP DATABASE music;
 
 -- Creates a new database
--- CREATE DATABASE music;
+CREATE DATABASE music;
 USE music;
 
 CREATE TABLE artist(
@@ -27,7 +27,7 @@ CREATE TABLE track(
 	FOREIGN KEY(album_id) REFERENCES album(id)
 );
 
-INSERT INTO artist (id, name) VALUES 
+INSERT INTO artist (id, name) VALUES
 	(1, "Iron Maiden"),
 	(2, "Black Sabbath"),
 	(3, "Dio");
