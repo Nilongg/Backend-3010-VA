@@ -1,1 +1,11 @@
 Explain the difference between INNER JOIN, LEFT (OUTER) JOIN and RIGHT (OUTER) JOIN.
+
+inner join
+palauttaa vain samanveroiset rivit molemmista tauluista
+left
+palauttaa kaikki samanveroiset rivit oikealta pöydältä ja kaikki rivit vasemmalta, palauttaa myös null arvot
+right
+palauttaa kaikki samanveroiset rivit vasemmalta pöydältä ja kaikki rivit oikealta, palauttaa myös null arvot
+
+
+--Tehnyt ryhmässä (Niilo V, Mikael N, Aleksi O)
