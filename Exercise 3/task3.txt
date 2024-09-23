@@ -1,2 +1,12 @@
 Try to delete employees Steven Thorpe and Nancy Freehafer from the database.
 Does the delete operation succeed or not and why?
+
+No, because there are foreign key constraints
+and other columns depend on it.
+
+Test
+DELETE FROM employees
+WHERE (first_name = 'Steven' AND last_name = 'Thorpe')
+   OR (first_name = 'Nancy' AND last_name = 'Freehafer');
+
+-- Tehnyt ryhmässä (Niilo V, Mikael N, Aleksi O)
