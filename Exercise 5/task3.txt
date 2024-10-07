@@ -1,3 +1,15 @@
 Explain what is special about the database user root. Why root user should always have a strong password?
 Why remote login should always be disabled for root user?
 Explain how to disable remote login from root user.
+
+Root user should have a strong password to mitigate the chance of a brute force attack,
+and beacuse root has access to all of the database.
+
+Disabling remote login for the root user reduces the risk of external attacks,
+such as brute-force attempts, by limiting access to local connections only.
+
+UPDATE mysql.user SET Host='localhost' WHERE User='root';
+FLUSH PRIVILEGES;
+This restricts root access to the local machine only.
+
+--Tehnyt ryhmässä (Niilo V, Mikael N, Aleksi O)
