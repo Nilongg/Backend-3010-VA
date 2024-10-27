@@ -8,7 +8,7 @@ account and is added to the destination account. Define an OUT parameter exitVal
 all possible error codes.
 */
 
-DELIMITER $$
+DELIMITER //
 
 CREATE PROCEDURE TransferMoney(
     IN source_account_id INT,
@@ -17,46 +17,37 @@ CREATE PROCEDURE TransferMoney(
     OUT exitValue INT
 )
 BEGIN
-    -- Declare variables for error handling and account balance checks
-    DECLARE source_balance DECIMAL(10, 2);
-    DECLARE destination_balance DECIMAL(10, 2);
-    DECLARE exitHandler INT DEFAULT 0;
-
-    -- Start a transaction
-    START TRANSACTION;
-
-    -- Error handling block
-    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
+    DECLARE insufficient_funds CONDITION FOR SQLSTATE '45000';
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
-        SET exitValue = -1; -- General error code
-        ROLLBACK; -- Rollback the transaction in case of error
+        ROLLBACK;
+        SET exitValue = -1;  -- General error code for SQL exceptions
     END;
 
-    -- Check if source account has sufficient balance
-    SELECT balance INTO source_balance FROM accounts WHERE account_id = source_account_id FOR UPDATE;
-    IF source_balance < transfer_amount THEN
-        SET exitValue = -2; -- Insufficient funds error
-        ROLLBACK;
-        LEAVE exitHandler;
+    -- Start the transaction
+    START TRANSACTION;
+
+    -- Check if the source account has enough balance
+    IF (SELECT amount FROM account WHERE id = source_account_id) < transfer_amount THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Insufficient funds';
     END IF;
 
-    -- Deduct the transfer amount from the source account
-    UPDATE accounts
-    SET balance = balance - transfer_amount
-    WHERE account_id = source_account_id;
+    -- Deduct the amount from the source account
+    UPDATE account 
+    SET amount = amount - transfer_amount 
+    WHERE id = source_account_id;
 
-    -- Add the transfer amount to the destination account
-    UPDATE accounts
-    SET balance = balance + transfer_amount
-    WHERE account_id = destination_account_id;
+    -- Add the amount to the destination account
+    UPDATE account 
+    SET amount = amount + transfer_amount 
+    WHERE id = destination_account_id;
 
-    -- Commit the transaction
+    -- Commit the transaction if successful
     COMMIT;
-
+    
     -- Set success exit code
-    SET exitValue = 1;
-
-END$$
+    SET exitValue = 0;
+END //
 
 DELIMITER ;
 

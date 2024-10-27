@@ -5,61 +5,68 @@ to write comments (application user permissions, not database user). Define an o
 which describes wether there were errors or not and which type of error occured. Define all possible error codes
 as a comment.
 */
-DELIMITER $$
+-- Error Codes:
+-- 0: No error
+-- 1: Blog post not found
+-- 2: User does not have permission to comment
+-- 3: Comment text cannot be empty
+-- 4: Database error (generic error)
+
+DELIMITER //
+
 
 CREATE PROCEDURE AddComment(
-    IN post_id INT,
-    IN user_id INT,
-    IN comment_text TEXT,
-    OUT exitValue INT
+    IN p_blog_id INT,
+    IN p_user_id INT,
+    IN p_comment_text TEXT,
+    OUT p_error_code INT
 )
 BEGIN
-    -- Declare variables for permission and existence checks
-    DECLARE post_exists INT;
-    DECLARE user_can_comment INT;
+    -- Initialize the error code to 0 (no error)
+    SET p_error_code = 0;
 
-    -- Error handling block
-    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
-    BEGIN
-        SET exitValue = -1; -- General error code for any unexpected error
-        ROLLBACK; -- Rollback transaction in case of error
-    END;
+    -- Check if the blog post exists
+    DECLARE blog_exists INT;
+    SELECT COUNT(*) INTO blog_exists FROM Blog WHERE id = p_blog_id;
 
-    -- Start transaction
-    START TRANSACTION;
-
-    -- Check if the post exists
-    SELECT COUNT(*) INTO post_exists
-    FROM posts
-    WHERE post_id = post_id;
-
-    IF post_exists = 0 THEN
-        SET exitValue = -2; -- Error code for post not found
-        ROLLBACK;
-        LEAVE AddComment;
+    IF blog_exists = 0 THEN
+        SET p_error_code = 1; -- Blog post not found
+        LEAVE proc_end;
     END IF;
 
     -- Check if the user has permission to comment
-    SELECT can_comment INTO user_can_comment
-    FROM users
-    WHERE user_id = user_id;
+    DECLARE user_permission INT;
+    SELECT COUNT(*) INTO user_permission
+    FROM User u
+    JOIN Author a ON u.id = a.user_id
+    JOIN (
+        SELECT user_id FROM mysql.roles_mapping WHERE role_name = 'commenter_role'
+    ) AS r ON u.id = r.user_id
+    WHERE u.id = p_user_id;
 
-    IF user_can_comment = 0 THEN
-        SET exitValue = -3; -- Error code for user lacking comment permissions
-        ROLLBACK;
-        LEAVE AddComment;
+    IF user_permission = 0 THEN
+        SET p_error_code = 2; -- User does not have permission to comment
+        LEAVE proc_end;
     END IF;
 
-    -- Add the comment if all checks pass
-    INSERT INTO comments (post_id, user_id, comment_text, created_at)
-    VALUES (post_id, user_id, comment_text, NOW());
+    -- Check if the comment text is not empty
+    IF p_comment_text IS NULL OR TRIM(p_comment_text) = '' THEN
+        SET p_error_code = 3; -- Comment text cannot be empty
+        LEAVE proc_end;
+    END IF;
 
-    -- Commit the transaction
-    COMMIT;
+    -- Insert the comment into the Comment table
+    BEGIN
+        DECLARE CONTINUE HANDLER FOR SQLEXCEPTION
+        BEGIN
+            -- On error, set the error code
+            SET p_error_code = 4; -- Database error (generic error)
+        END;
 
-    -- Set success exit code
-    SET exitValue = 1;
+        INSERT INTO Comment (blog_id, user_id, comment_text) VALUES (p_blog_id, p_user_id, p_comment_text);
+    END;
 
-END$$
+proc_end:
+END //
 
 DELIMITER ;
