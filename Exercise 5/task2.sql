@@ -8,7 +8,8 @@ CREATE ROLE commenter_role;
 
 -- Grant privileges to roles
 GRANT SELECT, INSERT, UPDATE, DELETE ON blog.Blog TO author_role;
-GRANT SELECT, INSERT ON blog.Comment, blog.Blog TO commenter_role;
+GRANT SELECT, INSERT ON blog.Comment TO 'commenter_role';
+GRANT SELECT, INSERT ON blog.Blog TO 'commenter_role';
 
 -- Create users
 CREATE USER author_app;

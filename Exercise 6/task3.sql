@@ -5,6 +5,7 @@ to write comments (application user permissions, not database user). Define an o
 which describes wether there were errors or not and which type of error occured. Define all possible error codes
 as a comment.
 */
+
 -- Error Codes:
 -- 0: No error
 -- 1: Blog post not found
@@ -34,17 +35,14 @@ BEGIN
         LEAVE proc_end;
     END IF;
 
-    -- Check if the user has permission to comment
-    DECLARE user_permission INT;
-    SELECT COUNT(*) INTO user_permission
-    FROM User u
-    JOIN Author a ON u.id = a.user_id
-    JOIN (
-        SELECT user_id FROM mysql.roles_mapping WHERE role_name = 'commenter_role'
-    ) AS r ON u.id = r.user_id
-    WHERE u.id = p_user_id;
+    -- Check if the user has permission to comment from the application
+    DECLARE role_exists INT;
+    SELECT COUNT(*) INTO role_exists
+    FROM mysql.roles_mapping
+    WHERE User = SUBSTRING_INDEX(SESSION_USER(), '@', 1) AND Role = 'commenter_role';
+    --WHERE User = SESSION_USER() AND Role = 'commenter_role';
 
-    IF user_permission = 0 THEN
+    if role_exists = 0 THEN
         SET p_error_code = 2; -- User does not have permission to comment
         LEAVE proc_end;
     END IF;

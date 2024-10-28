@@ -23,7 +23,7 @@ UPDATE account SET amount = amount + @amount WHERE account.id = 1;
 COMMIT;
 
 -- It is important to execute these commands as transactions because if something goes wrong during the transaction,
--- the chages will be cancelled and the database will be in the same state as it was before the transaction started.
+-- the changes will be cancelled and the database will be in the same state as it was before the transaction started.
 
 /*
 declaring a transaction alone is often insufficient because

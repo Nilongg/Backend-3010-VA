@@ -17,7 +17,10 @@ CREATE PROCEDURE TransferMoney(
     OUT exitValue INT
 )
 BEGIN
+    -- Custom conditions and exit handler
     DECLARE insufficient_funds CONDITION FOR SQLSTATE '45000';
+    DECLARE account_not_found CONDITION FOR SQLSTATE '45001';
+
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
@@ -27,24 +30,33 @@ BEGIN
     -- Start the transaction
     START TRANSACTION;
 
+    -- Check if both of the accounts exist
+    IF NOT EXISTS (SELECT 1 FROM account WHERE id = source_account_id) THEN
+        SIGNAL account_not_found SET MESSAGE_TEXT = 'Source account not found';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM account WHERE id = destination_account_id) THEN
+        SIGNAL account_not_found SET MESSAGE_TEXT = 'Destination account not found';
+    END IF;
+
     -- Check if the source account has enough balance
     IF (SELECT amount FROM account WHERE id = source_account_id) < transfer_amount THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Insufficient funds';
+        SIGNAL insufficient_funds SET MESSAGE_TEXT = 'Insufficient funds';
     END IF;
 
     -- Deduct the amount from the source account
-    UPDATE account 
-    SET amount = amount - transfer_amount 
+    UPDATE account
+    SET amount = amount - transfer_amount
     WHERE id = source_account_id;
 
     -- Add the amount to the destination account
-    UPDATE account 
-    SET amount = amount + transfer_amount 
+    UPDATE account
+    SET amount = amount + transfer_amount
     WHERE id = destination_account_id;
 
     -- Commit the transaction if successful
     COMMIT;
-    
+
     -- Set success exit code
     SET exitValue = 0;
 END //
